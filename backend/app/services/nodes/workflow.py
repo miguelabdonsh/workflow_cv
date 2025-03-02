@@ -31,7 +31,7 @@ class WorkflowStatus(BaseModel):
     start_time: Optional[datetime] = None
     progress_percentage: float = 0.0
 
-class NodeConnection(BaseModel):
+class NodeConnection(BaseModel): 
     """Representa una conexión entre nodos en el flujo de trabajo"""
     from_node: str
     to_node: str
