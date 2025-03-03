@@ -229,3 +229,79 @@ El diseño basado en nodos facilita:
 3. **Flujos de trabajo alternativos** conectando nodos en diferentes configuraciones
 4. **Reutilización de componentes** en diferentes partes del sistema
 
+## Procesamiento Paralelo con Microservicios
+
+El sistema ha sido actualizado para procesar CVs en paralelo mediante microservicios independientes. Cada vez que se sube un CV, se inicia un microservicio que se encarga de su análisis, permitiendo procesar múltiples CVs simultáneamente.
+
+### Características del procesamiento paralelo:
+
+- Cada CV se procesa en un microservicio independiente
+- Los microservicios se inician automáticamente al subir un CV
+- Cada microservicio gestiona todo el ciclo de vida del procesamiento
+- Los resultados se guardan en un directorio específico para cada proceso
+- La API proporciona endpoints para consultar el estado y los resultados
+
+### Nuevos endpoints:
+
+- **POST /analyze-cv/**: Inicia el procesamiento de un CV y devuelve un ID de proceso
+- **GET /cv-results/{process_id}**: Consulta el estado y resultados de un proceso específico
+
+### Flujo de trabajo:
+
+1. El usuario sube un CV a través del endpoint `analyze-cv`
+2. La API inicia un microservicio para procesar el CV
+3. La API devuelve inmediatamente un ID de proceso al usuario
+4. El microservicio procesa el CV en segundo plano
+5. El usuario puede consultar el estado y resultado a través del endpoint `cv-results`
+
+### Arquitectura:
+
+- **cv_router.py**: Gestiona las solicitudes y lanza microservicios
+- **cv_microservice.py**: Implementa el microservicio que procesa cada CV
+- **cv_analyzer_workflow.py**: Contiene la lógica del workflow de nodos (sin cambios)
+
+## Procesamiento por Lotes con Supervisor
+
+También se ha implementado un sistema de procesamiento por lotes con un microservicio supervisor que coordina y consolida los resultados de múltiples análisis de CVs.
+
+### Características del procesamiento por lotes:
+
+- Permite enviar múltiples CVs en una sola solicitud
+- Inicia un microservicio independiente para cada CV
+- Utiliza un supervisor que monitorea y coordina todos los procesos
+- Consolida los resultados una vez que todos los CVs han sido procesados
+- Genera estadísticas y comparaciones entre candidatos
+
+### Nuevos endpoints:
+
+- **POST /batch-cv/**: Inicia el procesamiento de un lote de CVs
+- **GET /batch-results/{batch_id}**: Obtiene los resultados consolidados o el progreso actual
+- **GET /batch-status/{batch_id}**: Obtiene información sobre el estado del lote
+
+### Flujo de trabajo:
+
+1. El usuario envía múltiples CVs al endpoint `batch-cv`
+2. La API crea un identificador único para el lote
+3. Se inicia un microservicio para cada CV
+4. Se inicia un supervisor para monitorear todo el lote
+5. La API devuelve inmediatamente el ID del lote
+6. El supervisor monitorea continuamente el progreso de cada proceso
+7. Una vez que todos los procesos terminan, el supervisor consolida los resultados
+8. El usuario puede consultar el progreso y resultados a través del endpoint `batch-results`
+
+### Arquitectura:
+
+- **batch_router.py**: Gestiona las solicitudes de lotes y devuelve resultados
+- **batch_processor.py**: Servicio que inicia y gestiona los procesos
+- **batch_supervisor.py**: Microservicio que monitorea y consolida resultados
+- **batch_schemas.py**: Modelos de datos para el procesamiento por lotes
+
+### Resultado consolidado:
+
+El resultado consolidado del lote incluye:
+- Lista completa de todos los análisis individuales
+- Top candidatos con mejores puntuaciones
+- Estadísticas comparativas (puntuación media, distribución)
+- Resumen de habilidades comunes entre candidatos
+- Información detallada sobre tiempos de procesamiento
+

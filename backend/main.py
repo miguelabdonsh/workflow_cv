@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import os
-from app.routers import cv_router, chat_router
+from app.routers import cv_router, chat_router, batch_router
 
 # Configurar el sistema de logging
 logging.basicConfig(
@@ -26,11 +26,18 @@ app.add_middleware(
 # Incluir los routers
 app.include_router(cv_router.router, prefix="")
 app.include_router(chat_router.router, prefix="")
+app.include_router(batch_router.router, prefix="")  # Nuevo router para procesamiento por lotes
 
 @app.on_event("startup")
 async def startup_event():
     logger.info("=== Iniciando servidor de CV Analyzer ===")
     logger.info(f"Directorio de trabajo: {os.getcwd()}")
+    
+    # Crear el directorio para los resultados si no existe
+    results_dir = os.path.join(os.getcwd(), "resultados")
+    os.makedirs(results_dir, exist_ok=True)
+    logger.info(f"Directorio de resultados: {results_dir}")
+    
     logger.info("API disponible en http://localhost:8000")
     logger.info("Documentación disponible en http://localhost:8000/docs")
 

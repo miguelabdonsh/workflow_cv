@@ -3,6 +3,7 @@ import google.generativeai as genai
 from typing import Dict, Any, List, Optional
 import os
 import json
+from datetime import datetime
 
 from pydantic import BaseModel
 
@@ -31,25 +32,57 @@ class ClassifierNode(BaseNode[CVDocument, ClassifiedCV, Dict[str, Any]]):
     async def process(self, input_data: CVDocument, context: Dict[str, Any]) -> ClassifiedCV:
         """Clasifica el texto del CV en secciones utilizando Gemini AI"""
         cv_text = input_data.text
+        start_time = datetime.now()
         
-        logger.info(f"Classifying CV text ({len(cv_text)} characters)")
+        logger.info(f"[{start_time.strftime('%Y-%m-%d %H:%M:%S')}] Classifying CV text ({len(cv_text)} characters)")
         
         try:
             # Crear el prompt para Gemini
+            prompt_start_time = datetime.now()
             prompt = self._create_classification_prompt(cv_text)
+            prompt_end_time = datetime.now()
+            prompt_duration = (prompt_end_time - prompt_start_time).total_seconds()
+            logger.info(f"[{prompt_end_time.strftime('%Y-%m-%d %H:%M:%S')}] Prompt para clasificación generado en {prompt_duration:.2f} segundos")
             
-            # Llamar a Gemini para clasificar el texto
+            # Llamar a Gemini para clasificar el CV
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Enviando solicitud a Gemini para clasificación")
+            gemini_start_time = datetime.now()
             response = self.model.generate_content(prompt)
+            gemini_end_time = datetime.now()
+            gemini_duration = (gemini_end_time - gemini_start_time).total_seconds()
+            logger.info(f"[{gemini_end_time.strftime('%Y-%m-%d %H:%M:%S')}] Respuesta de Gemini recibida en {gemini_duration:.2f} segundos")
             
             # Procesar la respuesta
+            processing_start_time = datetime.now()
             classified_cv = self._process_gemini_response(response.text)
+            processing_end_time = datetime.now()
+            processing_duration = (processing_end_time - processing_start_time).total_seconds()
+            logger.info(f"[{processing_end_time.strftime('%Y-%m-%d %H:%M:%S')}] Respuesta procesada en {processing_duration:.2f} segundos")
             
-            logger.info(f"Successfully classified CV into sections")
+            end_time = datetime.now()
+            total_duration = (end_time - start_time).total_seconds()
+            logger.info(f"[{end_time.strftime('%Y-%m-%d %H:%M:%S')}] Successfully classified CV into sections in {total_duration:.2f} seconds")
+            
+            # Registrar información sobre las secciones encontradas
+            sections_found = []
+            if classified_cv.nombre: sections_found.append("nombre")
+            if classified_cv.correo: sections_found.append("correo")
+            if classified_cv.telefono: sections_found.append("telefono")
+            if classified_cv.ubicacion: sections_found.append("ubicacion")
+            if classified_cv.linkedin: sections_found.append("linkedin")
+            if classified_cv.resumen: sections_found.append("resumen")
+            if classified_cv.educacion_texto: sections_found.append("educacion")
+            if classified_cv.experiencia_texto: sections_found.append("experiencia")
+            if classified_cv.habilidades_texto: sections_found.append("habilidades")
+            if classified_cv.idiomas_texto: sections_found.append("idiomas")
+            
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Secciones encontradas: {', '.join(sections_found)}")
             
             return classified_cv
             
         except Exception as e:
-            logger.error(f"Error classifying CV: {str(e)}")
+            error_time = datetime.now()
+            logger.error(f"[{error_time.strftime('%Y-%m-%d %H:%M:%S')}] Error classifying CV: {str(e)}")
             raise
     
     def _create_classification_prompt(self, cv_text: str) -> str:

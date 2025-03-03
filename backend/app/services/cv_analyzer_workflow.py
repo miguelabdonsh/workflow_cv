@@ -3,6 +3,7 @@ import logging
 from typing import Dict, Any
 import asyncio
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Cargar variables de entorno antes de importar los nodos
 load_dotenv()
@@ -55,7 +56,8 @@ class CVAnalyzerWorkflowService:
     
     async def analyze_cv(self, file_path: str, job_description: str) -> AnalysisResult:
         """Analiza un CV utilizando el flujo de trabajo configurado"""
-        logger.info(f"Starting CV analysis for file: {file_path}")
+        start_time = datetime.now()
+        logger.info(f"[{start_time.strftime('%Y-%m-%d %H:%M:%S')}] Starting CV analysis for file: {file_path}")
         
         try:
             # Preparar el contexto del flujo de trabajo
@@ -64,6 +66,7 @@ class CVAnalyzerWorkflowService:
                 "file_path": file_path,
                 "filename": os.path.basename(file_path)
             }
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Contexto de flujo de trabajo preparado para archivo: {os.path.basename(file_path)}")
             
             # Preparar la entrada para el nodo inicial (extractor)
             extractor_input = ExtractorInput(
@@ -71,11 +74,16 @@ class CVAnalyzerWorkflowService:
             )
             
             # Ejecutar el flujo de trabajo inicial (Extractor -> Clasificador)
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Iniciando ejecución del flujo Extractor -> Clasificador")
+            extractor_start_time = datetime.now()
             results = await self.workflow_manager.execute(
                 start_node=self.extractor_node.name,
                 initial_input=extractor_input,
                 context=workflow_context
             )
+            extractor_end_time = datetime.now()
+            extractor_duration = (extractor_end_time - extractor_start_time).total_seconds()
+            logger.info(f"[{extractor_end_time.strftime('%Y-%m-%d %H:%M:%S')}] Flujo Extractor -> Clasificador completado en {extractor_duration:.2f} segundos")
             
             # Obtener resultados intermedios
             cv_document: CVDocument = results.get(self.extractor_node.name)
@@ -88,27 +96,45 @@ class CVAnalyzerWorkflowService:
             )
             
             # Ejecutar el nodo de evaluación de habilidades
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Iniciando evaluación de habilidades")
+            skills_start_time = datetime.now()
             skills_evaluation, _ = await self.skills_evaluator_node.execute(
                 skills_evaluator_input, 
                 workflow_context
             )
+            skills_end_time = datetime.now()
+            skills_duration = (skills_end_time - skills_start_time).total_seconds()
+            logger.info(f"[{skills_end_time.strftime('%Y-%m-%d %H:%M:%S')}] Evaluación de habilidades completada en {skills_duration:.2f} segundos")
             
             # Crear el conjunto completo de resultados
             results[self.skills_evaluator_node.name] = skills_evaluation
             
             # Convertir a AnalysisResult para compatibilidad con la API actual
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Generando resultado final del análisis")
+            conversion_start_time = datetime.now()
             analysis_result = self._convert_to_analysis_result(
                 classified_cv, 
                 skills_evaluation, 
                 job_description
             )
+            conversion_end_time = datetime.now()
+            conversion_duration = (conversion_end_time - conversion_start_time).total_seconds()
+            logger.info(f"[{conversion_end_time.strftime('%Y-%m-%d %H:%M:%S')}] Resultado final generado en {conversion_duration:.2f} segundos")
             
-            logger.info(f"CV analysis completed successfully for file: {file_path}")
+            # Calcular tiempo total
+            end_time = datetime.now()
+            total_duration = (end_time - start_time).total_seconds()
+            logger.info(f"[{end_time.strftime('%Y-%m-%d %H:%M:%S')}] CV analysis completed successfully for file: {file_path} in {total_duration:.2f} seconds")
+            
+            # Registrar información sobre el resultado
+            match_score = analysis_result.match_score if hasattr(analysis_result, 'match_score') else 0.0
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Puntuación final de compatibilidad: {match_score:.2f}")
             
             return analysis_result
             
         except Exception as e:
-            logger.error(f"Error analyzing CV: {str(e)}")
+            error_time = datetime.now()
+            logger.error(f"[{error_time.strftime('%Y-%m-%d %H:%M:%S')}] Error analyzing CV: {str(e)}")
             raise
     
     def _convert_to_analysis_result(self, 

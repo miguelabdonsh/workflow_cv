@@ -3,6 +3,7 @@ import google.generativeai as genai
 from typing import Dict, Any, List
 import os
 import json
+from datetime import datetime
 
 from pydantic import BaseModel
 
@@ -37,8 +38,9 @@ class SkillsEvaluatorNode(BaseNode[SkillsEvaluatorInput, SkillsEvaluation, Dict[
         """Evalúa las habilidades técnicas y blandas utilizando Gemini AI"""
         classified_cv = input_data.classified_cv
         job_description = input_data.job_description
+        start_time = datetime.now()
         
-        logger.info(f"Evaluating skills from classified CV data")
+        logger.info(f"[{start_time.strftime('%Y-%m-%d %H:%M:%S')}] Evaluating skills from classified CV data")
         
         try:
             # Extraer las secciones relevantes para la evaluación de habilidades
@@ -46,26 +48,55 @@ class SkillsEvaluatorNode(BaseNode[SkillsEvaluatorInput, SkillsEvaluation, Dict[
             experience_text = classified_cv.experiencia_texto or ""
             languages_text = classified_cv.idiomas_texto or ""
             
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Secciones extraídas para evaluación: habilidades ({len(skills_text)} caracteres), experiencia ({len(experience_text)} caracteres), idiomas ({len(languages_text)} caracteres)")
+            
             # Crear el prompt para Gemini
+            prompt_start_time = datetime.now()
             prompt = self._create_skills_evaluation_prompt(
                 skills_text, 
                 experience_text, 
                 languages_text, 
                 job_description
             )
+            prompt_end_time = datetime.now()
+            prompt_duration = (prompt_end_time - prompt_start_time).total_seconds()
+            logger.info(f"[{prompt_end_time.strftime('%Y-%m-%d %H:%M:%S')}] Prompt para evaluación de habilidades generado en {prompt_duration:.2f} segundos")
             
             # Llamar a Gemini para evaluar las habilidades
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Enviando solicitud a Gemini para evaluación de habilidades")
+            gemini_start_time = datetime.now()
             response = self.model.generate_content(prompt)
+            gemini_end_time = datetime.now()
+            gemini_duration = (gemini_end_time - gemini_start_time).total_seconds()
+            logger.info(f"[{gemini_end_time.strftime('%Y-%m-%d %H:%M:%S')}] Respuesta de Gemini recibida en {gemini_duration:.2f} segundos")
             
             # Procesar la respuesta
+            processing_start_time = datetime.now()
             skills_evaluation = self._process_gemini_response(response.text)
+            processing_end_time = datetime.now()
+            processing_duration = (processing_end_time - processing_start_time).total_seconds()
+            logger.info(f"[{processing_end_time.strftime('%Y-%m-%d %H:%M:%S')}] Respuesta procesada en {processing_duration:.2f} segundos")
             
-            logger.info(f"Successfully evaluated skills")
+            # Registrar información sobre las habilidades evaluadas
+            tech_skills_count = len(skills_evaluation.habilidades_tecnicas)
+            soft_skills_count = len(skills_evaluation.habilidades_blandas)
+            languages_count = len(skills_evaluation.idiomas)
+            match_score = skills_evaluation.puntuacion_general
+            
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Evaluación completada: {tech_skills_count} habilidades técnicas, {soft_skills_count} habilidades blandas, {languages_count} idiomas, puntuación: {match_score:.2f}")
+            
+            # Registrar información sobre el campo del candidato y el puesto
+            logger.info(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Campo del candidato: {skills_evaluation.campo_principal_candidato}, Campo solicitado: {skills_evaluation.campo_solicitado}, Match: {skills_evaluation.match_campo}")
+            
+            end_time = datetime.now()
+            total_duration = (end_time - start_time).total_seconds()
+            logger.info(f"[{end_time.strftime('%Y-%m-%d %H:%M:%S')}] Successfully evaluated skills in {total_duration:.2f} seconds")
             
             return skills_evaluation
             
         except Exception as e:
-            logger.error(f"Error evaluating skills: {str(e)}")
+            error_time = datetime.now()
+            logger.error(f"[{error_time.strftime('%Y-%m-%d %H:%M:%S')}] Error evaluating skills: {str(e)}")
             raise
     
     def _create_skills_evaluation_prompt(self, skills_text: str, experience_text: str, 
