@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: cv-analyzer
 spec:
-  replicas: 5  # 5 pods para procesar hasta 5 currículums en paralelo
+  replicas: 10  # Cambiado de 5 a 10 pods para procesar hasta 10 currículums en paralelo
   selector:
     matchLabels:
       app: cv-analyzer
@@ -24,7 +24,7 @@ spec:
         - containerPort: 8000
         env:
         - name: MAX_WORKERS
-          value: "1"  # Un solo worker por pod para evitar saturación
+          value: "5"  # Un solo worker por pod para evitar saturación
         # La API key viene del archivo .env copiado al contenedor
         resources:  # Recursos adecuados para paralelismo
           requests:

@@ -20,7 +20,7 @@ fi
 # 0.1 Reiniciar completamente minikube
 echo -e "${YELLOW}Reiniciando Minikube completamente para asegurar configuración limpia...${NC}"
 minikube delete
-minikube start --cpus=4 --memory=6144
+minikube start --cpus=6 --memory=7000 # Aumentado a 6 CPUs y 8GB RAM para 10 pods
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error al iniciar Minikube${NC}"
     exit 1
@@ -71,7 +71,7 @@ echo -e "${GREEN}Configuración de Kubernetes aplicada correctamente${NC}"
 
 # 6. Esperar a que los pods estén listos
 echo -e "${YELLOW}Esperando a que los pods estén listos...${NC}"
-kubectl rollout status deployment/cv-analyzer --timeout=120s
+kubectl rollout status deployment/cv-analyzer --timeout=180s  # Aumentado a 180s para 10 pods
 if [ $? -ne 0 ]; then
     echo -e "${RED}Advertencia: Tiempo de espera agotado para los pods${NC}"
     echo -e "${YELLOW}Continuando de todos modos...${NC}"

@@ -31,8 +31,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onAnalyze, isUploading, error }
           return;
         }
         
-        // Verificar que no exceda el límite de 5 archivos
-        if (selectedFiles.length + newFiles.length >= 5) {
+        // Verificar que no exceda el límite de 10 archivos
+        if (selectedFiles.length + newFiles.length >= 10) {
           return;
         }
         
@@ -43,7 +43,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onAnalyze, isUploading, error }
         });
       });
       
-      setSelectedFiles(prev => [...prev, ...newFiles].slice(0, 5));
+      setSelectedFiles(prev => [...prev, ...newFiles].slice(0, 10));
     }
     
     // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
@@ -78,8 +78,8 @@ const UploadForm: React.FC<UploadFormProps> = ({ onAnalyze, isUploading, error }
           return;
         }
         
-        // Verificar que no exceda el límite de 5 archivos
-        if (selectedFiles.length + newFiles.length >= 5) {
+        // Verificar que no exceda el límite de 10 archivos
+        if (selectedFiles.length + newFiles.length >= 10) {
           return;
         }
         
@@ -90,7 +90,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onAnalyze, isUploading, error }
         });
       });
       
-      setSelectedFiles(prev => [...prev, ...newFiles].slice(0, 5));
+      setSelectedFiles(prev => [...prev, ...newFiles].slice(0, 10));
     }
   };
 
@@ -110,7 +110,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ onAnalyze, isUploading, error }
   };
 
   const isFormValid = jobDescription.trim().length > 0 && selectedFiles.length > 0;
-  const canAddMoreFiles = selectedFiles.length < 5;
+  const canAddMoreFiles = selectedFiles.length < 10;
 
   return (
     <div className="p-6 md:p-8">
@@ -135,10 +135,10 @@ const UploadForm: React.FC<UploadFormProps> = ({ onAnalyze, isUploading, error }
       <div className="mb-8">
         <div className="flex justify-between items-center mb-2">
           <p className="block text-sm font-medium text-gray-700">
-            Currículums (PDF) - Máximo 5
+            Currículums (PDF) - Máximo 10
           </p>
           <span className="text-sm text-gray-500">
-            {selectedFiles.length}/5 archivos
+            {selectedFiles.length}/10 archivos
           </span>
         </div>
         
