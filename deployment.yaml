@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cv-analyzer
+spec:
+  replicas: 10  # Cambiado de 5 a 10 pods para procesar hasta 10 currículums en paralelo
+  selector:
+    matchLabels:
+      app: cv-analyzer
+  template:
+    metadata:
+      labels:
+        app: cv-analyzer
+      annotations:
+        # Anotación para permitir múltiples conexiones simultáneas
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+      containers:
+      - name: cv-analyzer
+        image: cv-analyzer:latest
+        imagePullPolicy: Never  # Importante: usar imagen local
+        ports:
+        - containerPort: 8000
+        env:
+        - name: MAX_WORKERS
+          value: "5"  # Un solo worker por pod para evitar saturación
+        # La API key viene del archivo .env copiado al contenedor
+        resources:  # Recursos adecuados para paralelismo
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m" 
